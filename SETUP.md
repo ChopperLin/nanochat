@@ -55,7 +55,10 @@ nvidia-smi           # Optional: check for GPU availability
 ### Supported Platforms
 - **Linux**: Full support (primary development platform)
 - **macOS**: CPU and MPS (Apple Silicon) support
-- **Windows**: CPU support (with some limitations)
+- **Windows**: Full native support (CPU and CUDA GPU)
+  - Python code works natively on Windows
+  - Shell scripts (.sh) need WSL or Git Bash, OR run Python commands directly
+  - See [Windows-Specific Instructions](#windows-specific-instructions) below
 
 ## Installation Methods
 
@@ -135,6 +138,141 @@ uv sync --extra cpu
 
 # For GPU (requires CUDA-capable GPU)
 uv sync --extra gpu
+```
+
+### Windows-Specific Instructions
+
+Nanochat works natively on Windows! Here's how to set it up:
+
+#### Prerequisites for Windows
+
+1. **Install Python 3.10+**:
+   - Download from [python.org](https://www.python.org/downloads/)
+   - During installation, check "Add Python to PATH"
+
+2. **Install uv**:
+   ```powershell
+   # In PowerShell (as Administrator)
+   irm https://astral.sh/uv/install.ps1 | iex
+   ```
+
+3. **Install Rust** (for tokenizer):
+   - Download from [rustup.rs](https://rustup.rs/)
+   - Run the installer and follow prompts
+
+4. **Install Visual Studio Build Tools** (if not already installed):
+   - Required for building Rust components
+   - Download from [Visual Studio Build Tools](https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2022)
+   - Select "C++ build tools" during installation
+
+#### Installation on Windows
+
+```powershell
+# Clone the repository
+git clone https://github.com/karpathy/nanochat.git
+cd nanochat
+
+# Create virtual environment
+uv venv
+.venv\Scripts\activate
+
+# Install dependencies (CPU)
+pip install -e ".[cpu]"
+
+# OR for GPU (if you have NVIDIA GPU with CUDA)
+pip install -e ".[gpu]"
+
+# Build Rust tokenizer
+cd rustbpe
+cargo build --release
+cd ..
+
+# Verify installation
+python -c "import torch; print(f'PyTorch version: {torch.__version__}')"
+```
+
+#### Running Training on Windows
+
+Since the `.sh` shell scripts don't work directly on Windows, you have **three options**:
+
+**Option 1: Run Python commands directly** (Recommended for Windows)
+
+Instead of running `bash speedrun.sh`, you can run the Python commands directly:
+
+```powershell
+# Activate environment
+.venv\Scripts\activate
+
+# Example: Train base model
+python -m scripts.base_train
+
+# Example: Train with multiple GPUs (if available)
+python -m torch.distributed.run --standalone --nproc_per_node=2 -m scripts.base_train
+
+# Example: Start web interface
+python -m scripts.chat_web
+```
+
+**Option 2: Use Git Bash** (comes with Git for Windows)
+
+```bash
+# In Git Bash
+source .venv/Scripts/activate
+bash speedrun.sh  # Or any other .sh script
+```
+
+**Option 3: Use WSL (Windows Subsystem for Linux)**
+
+If you prefer the full Linux experience:
+
+```bash
+# In WSL Ubuntu
+# Follow the Linux installation instructions
+```
+
+#### Windows-Specific Notes
+
+1. **Path separators**: Python handles path separators automatically, so the code works fine
+2. **File locking**: The project uses `filelock` instead of `fcntl`, so Windows is fully supported
+3. **GPU support**: CUDA GPUs work on Windows - install CUDA toolkit from NVIDIA if needed
+4. **PowerShell vs CMD**: PowerShell is recommended over CMD for better compatibility
+5. **Long paths**: If you encounter path length issues, enable long path support in Windows:
+   ```powershell
+   # Run as Administrator
+   New-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem" -Name "LongPathsEnabled" -Value 1 -PropertyType DWORD -Force
+   ```
+
+#### Creating a Windows Batch Script
+
+You can create a `speedrun.bat` file to replicate the shell script functionality:
+
+```batch
+@echo off
+REM Speedrun equivalent for Windows
+call .venv\Scripts\activate.bat
+
+REM Tokenizer training
+python -m scripts.tok_train
+
+REM Download data
+python -m nanochat.dataset -n 100
+
+REM Base training
+python -m scripts.base_train
+
+REM Evaluation
+python -m scripts.base_eval
+
+REM Midtraining
+python -m scripts.mid_train
+
+REM SFT
+python -m scripts.chat_sft
+
+REM Chat evaluation
+python -m scripts.chat_eval
+
+echo Training complete!
 ```
 
 ## Quick Start
