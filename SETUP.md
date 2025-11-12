@@ -277,6 +277,28 @@ echo Training complete!
 
 ## Quick Start
 
+### 0. Skip Training - Download Pre-Trained Model (FREE!)
+
+**Don't want to spend $100-$800 training?** You can download pre-trained models from HuggingFace:
+
+```bash
+# Install git-lfs for large files
+git lfs install
+
+# Download the model (1.9B parameters, ~7GB)
+mkdir -p models
+cd models
+git clone https://huggingface.co/karpathy/nanochat-d32
+cd ..
+
+# Chat with it!
+python -m scripts.chat_web --checkpoint=./models/nanochat-d32/model.pt
+```
+
+**See [DOWNLOAD_MODELS.md](DOWNLOAD_MODELS.md) for complete instructions!**
+
+---
+
 ### 1. Train a Small Model (CPU/Development)
 
 For testing the pipeline on CPU or MPS (Apple Silicon), use the modified CPU training script:
